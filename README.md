@@ -28,7 +28,7 @@ sudo nano /etc/nginx/sites-available/default
 
 2. The file should display the following:
 
-```
+```nginx
 ##
 # You should look at the following URL's in order to grasp a solid understanding
 # of Nginx configuration files in order to fully unleash the power of Nginx.
@@ -77,12 +77,9 @@ server {
         server_name _;
         
         location / {
-                proxy_pass http://localhost:3000;
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection 'upgrade';
-                proxy_set_header Host $host;
-                proxy_cache_bypass $http_upgrade;
+                # First attempt to serve request as file, then
+                # as directory, then fall back to displaying a 404.
+                try_files $uri $uri/ =404;
         }
 
         # pass PHP scripts to FastCGI server
@@ -125,9 +122,15 @@ server {
 #}
 ```
 
-3. Locate the servers location path and replace it with the following:
-
+3. Add the server name to the file:
+   
+```nginx
+server_name 192.168.10.100;
 ```
+
+4. Locate the servers location path and replace it with the following:
+
+```nginx
         location / {
                 proxy_pass http://localhost:3000;
                 proxy_http_version 1.1;
@@ -138,7 +141,22 @@ server {
         }
 ```
 
-4. Check that no syntax errors have been introduced to the configuration file, the following message should appear:
+5. Repeat `step 3` after the initial location code block and add another to enable the reverse proxy on the posts page.
+
+```nginx
+        location /posts {
+                proxy_pass http://localhost:3000/posts;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_cache_bypass $http_upgrade;
+        }
+```
+
+>Note: Add `/posts` to instruct the proxy to pass to the posts web page.
+
+6. Check that no syntax errors have been introduced to the configuration file, the following message should appear:
 
 ```
 sudo nginx -t
@@ -146,12 +164,14 @@ sudo nginx -t
 
 ![check](check.PNG)
 
-5. Restart Nginx to relaunch the web server to include the addition of a reverse proxy:
+7. Restart Nginx to relaunch the web server to include the addition of a reverse proxy:
 
 ```
 sudo systemctl restart nginx
 ```
 
-6. Navigate to the URL `http://192.168.10.100/posts` to access the web page; note, this does not include the port number anymore.
+1. Navigate to the URL `http://192.168.10.100` and `http://192.168.10.100/posts` to access the web page; note, this does not include the port number anymore.
+
+![web_page](final1.PNG)
 
 ![web_page](final.PNG)
